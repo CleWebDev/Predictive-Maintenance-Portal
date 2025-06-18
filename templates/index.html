@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictive Maintenance Portal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+            color: #333;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #7f8c8d;
+        }
+
+        .main-content {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .input-panel {
+            flex: 1;
+            min-width: 400px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .results-panel {
+            flex: 1;
+            min-width: 400px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #2c3e50;
+        }
+
+        select, input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+        }
+
+        .predict-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .predict-btn:hover {
+            background-color: #2980b9;
+        }
+
+        .predict-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #7f8c8d;
+        }
+
+        .results {
+            display: none;
+        }
+
+        .risk-indicator {
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+        }
+
+        .prediction-value {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .explanation {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .explanation h4 {
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
+
+        .explanation ul {
+            list-style-type: none;
+            padding-left: 0;
+        }
+
+        .explanation li {
+            padding: 5px 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+
+        .explanation li:last-child {
+            border-bottom: none;
+        }
+
+        .service-section {
+            margin-top: 20px;
+        }
+
+        .schedule-btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .schedule-btn:hover {
+            background-color: #c0392b;
+        }
+
+        .service-message {
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            border-radius: 6px;
+            color: #155724;
+        }
+
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .input-hint {
+            font-size: 12px;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .main-content {
+                flex-direction: column;
+            }
+            
+            .input-panel, .results-panel {
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Predictive Maintenance Portal</h1>
+            <p>Enter equipment parameters to predict failure timeline and assess maintenance needs</p>
+        </div>
+
+        <div class="main-content">
+            <div class="input-panel">
+                <h3>Equipment Parameters</h3>
+                <form id="predictionForm">
+                    <div class="form-group">
+                        <label for="machine_type">Machine Type:</label>
+                        <select id="machine_type" name="machine_type" required>
+                            <option value="">Select machine type...</option>
+                            {% for machine in unique_values.machine_type %}
+                            <option value="{{ machine }}">{{ machine }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="operating_mode">Operating Mode:</label>
+                        <select id="operating_mode" name="operating_mode" required>
+                            <option value="">Select operating mode...</option>
+                            {% for mode in unique_values.operating_mode %}
+                            <option value="{{ mode }}">{{ mode }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="environment">Environment:</label>
+                        <select id="environment" name="environment" required>
+                            <option value="">Select environment...</option>
+                            {% for env in unique_values.environment %}
+                            <option value="{{ env }}">{{ env }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="maintenance_interval">Maintenance Interval (days):</label>
+                        <input type="number" id="maintenance_interval" name="maintenance_interval" 
+                               min="{{ unique_values.maintenance_interval_range.min }}" 
+                               max="{{ unique_values.maintenance_interval_range.max }}" required>
+                        <div class="input-hint">Range: {{ unique_values.maintenance_interval_range.min }} - {{ unique_values.maintenance_interval_range.max }} days</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vibration_level">Vibration Level (mm/s):</label>
+                        <select id="vibration_level" name="vibration_level" required>
+                            <option value="">Select vibration level...</option>
+                            {% for level in unique_values.vibration_level_options %}
+                            <option value="{{ level }}">{{ level }} mm/s</option>
+                            {% endfor %}
+                        </select>
+                        <div class="input-hint">Normal: < 2.0, High: > 3.0 mm/s</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="temperature">Temperature (°F):</label>
+                        <input type="number" id="temperature" name="temperature" 
+                               min="{{ unique_values.temperature_F_range.min }}" 
+                               max="{{ unique_values.temperature_F_range.max }}" 
+                               step="0.1" required>
+                        <div class="input-hint">Range: {{ unique_values.temperature_F_range.min }} - {{ unique_values.temperature_F_range.max }} °F</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="pressure">Pressure (PSI):</label>
+                        <select id="pressure" name="pressure" required>
+                            <option value="">Select pressure level...</option>
+                            {% for psi in unique_values.pressure_options %}
+                            <option value="{{ psi }}">{{ psi }} PSI</option>
+                            {% endfor %}
+                        </select>
+                        <div class="input-hint">Normal: 80-120, High: > 140 PSI</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="load_factor">Load Factor (0-1):</label>
+                        <input type="number" id="load_factor" name="load_factor" 
+                               min="0" max="1" step="0.01" required>
+                        <div class="input-hint">0 = No load, 1 = Maximum load</div>
+                    </div>
+
+                    <button type="submit" class="predict-btn" id="predictBtn">
+                        Analyze Equipment Condition
+                    </button>
+                </form>
+            </div>
+
+            <div class="results-panel">
+                <h3>Analysis Results</h3>
+                
+                <div id="loading" class="loading">
+                    <p>Analyzing equipment condition...</p>
+                </div>
+
+                <div id="error" class="error" style="display: none;"></div>
+
+                <div id="results" class="results">
+                    <div id="riskIndicator" class="risk-indicator">
+                        <div class="prediction-value" id="predictionValue"></div>
+                        <div id="riskMessage"></div>
+                    </div>
+
+                    <div class="explanation">
+                        <h4>Analysis Explanation</h4>
+                        <ul id="explanationList"></ul>
+                    </div>
+
+                    <div id="serviceSection" class="service-section" style="display: none;">
+                        <h4>Maintenance Recommendation</h4>
+                        <button id="scheduleBtn" class="schedule-btn">
+                            Schedule Maintenance
+                        </button>
+                        <div id="serviceMessage" class="service-message" style="display: none;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class PredictiveMaintenanceApp {
+            constructor() {
+                this.form = document.getElementById('predictionForm');
+                this.predictBtn = document.getElementById('predictBtn');
+                this.scheduleBtn = document.getElementById('scheduleBtn');
+                this.loading = document.getElementById('loading');
+                this.results = document.getElementById('results');
+                this.error = document.getElementById('error');
+                
+                this.currentPrediction = null;
+                this.initEventListeners();
+            }
+
+            initEventListeners() {
+                this.form.addEventListener('submit', (e) => this.handlePrediction(e));
+                this.scheduleBtn.addEventListener('click', () => this.handleServiceScheduling());
+            }
+
+            async handlePrediction(event) {
+                event.preventDefault();
+                
+                this.showLoading();
+                this.hideError();
+                
+                try {
+                    const formData = new FormData(this.form);
+                    const data = {
+                        machine_type: formData.get('machine_type'),
+                        maintenance_interval: formData.get('maintenance_interval'),
+                        operating_mode: formData.get('operating_mode'),
+                        environment: formData.get('environment'),
+                        vibration_level_mm_s: formData.get('vibration_level'),
+                        temperature_F: formData.get('temperature'),
+                        pressure_PSI: formData.get('pressure'),
+                        load_factor: formData.get('load_factor')
+                    };
+
+                    const response = await fetch('/predict', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const result = await response.json();
+                    this.currentPrediction = { ...result, machine_type: data.machine_type };
+                    this.displayResults(result);
+                    
+                } catch (error) {
+                    this.showError(`Error making prediction: ${error.message}`);
+                } finally {
+                    this.hideLoading();
+                }
+            }
+
+            displayResults(result) {
+                // Update risk indicator
+                const riskIndicator = document.getElementById('riskIndicator');
+                const predictionValue = document.getElementById('predictionValue');
+                const riskMessage = document.getElementById('riskMessage');
+                
+                riskIndicator.style.backgroundColor = result.risk_color + '20';
+                riskIndicator.style.borderLeft = `4px solid ${result.risk_color}`;
+                
+                // Show maintenance timing vs interval
+                const maintenanceText = `Maintenance recommended in ${result.days_until_maintenance} days`;
+                const intervalText = `(Scheduled interval: ${result.maintenance_interval} days)`;
+                
+                predictionValue.innerHTML = `${maintenanceText}<br><small>${intervalText}</small>`;
+                predictionValue.style.color = result.risk_color;
+                riskMessage.textContent = result.risk_message;
+
+                // Update explanation
+                const explanationList = document.getElementById('explanationList');
+                explanationList.innerHTML = '';
+                
+                result.explanation.forEach(explanation => {
+                    const li = document.createElement('li');
+                    li.textContent = explanation;
+                    explanationList.appendChild(li);
+                });
+
+                // Show/hide service section
+                const serviceSection = document.getElementById('serviceSection');
+                if (result.should_schedule_service) {
+                    serviceSection.style.display = 'block';
+                    this.scheduleBtn.textContent = result.risk_level === 'critical' 
+                        ? 'Schedule Emergency Maintenance' 
+                        : 'Schedule Preventive Maintenance';
+                } else {
+                    serviceSection.style.display = 'none';
+                }
+
+                // Hide service message
+                document.getElementById('serviceMessage').style.display = 'none';
+
+                this.results.style.display = 'block';
+            }
+
+            async handleServiceScheduling() {
+                if (!this.currentPrediction) return;
+
+                try {
+                    const data = {
+                        machine_type: this.currentPrediction.machine_type,
+                        days_until_maintenance: this.currentPrediction.days_until_maintenance,
+                        risk_level: this.currentPrediction.risk_level
+                    };
+
+                    const response = await fetch('/schedule_service', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(data)
+                    });
+
+                    const result = await response.json();
+                    
+                    const serviceMessage = document.getElementById('serviceMessage');
+                    serviceMessage.innerHTML = `
+                        <strong>Maintenance Request Submitted!</strong><br>
+                        ${result.message}<br>
+                        <small>Ticket ID: ${result.ticket_id}</small>
+                    `;
+                    serviceMessage.style.display = 'block';
+                    
+                    this.scheduleBtn.textContent = 'Maintenance Request Submitted';
+                    this.scheduleBtn.disabled = true;
+                    
+                } catch (error) {
+                    this.showError(`Error scheduling service: ${error.message}`);
+                }
+            }
+
+            showLoading() {
+                this.loading.style.display = 'block';
+                this.results.style.display = 'none';
+                this.predictBtn.disabled = true;
+                this.predictBtn.textContent = 'Analyzing...';
+            }
+
+            hideLoading() {
+                this.loading.style.display = 'none';
+                this.predictBtn.disabled = false;
+                this.predictBtn.textContent = 'Analyze Equipment Condition';
+            }
+
+            showError(message) {
+                this.error.textContent = message;
+                this.error.style.display = 'block';
+                this.results.style.display = 'none';
+            }
+
+            hideError() {
+                this.error.style.display = 'none';
+            }
+        }
+
+        // Initialize the app when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            new PredictiveMaintenanceApp();
+        });
+    </script>
+</body>
+</html>
