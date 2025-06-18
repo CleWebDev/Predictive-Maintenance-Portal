@@ -1,4 +1,4 @@
-echo "__pycache__/
+__pycache__/
 *.py[cod]
 *$py.class
 *.so
@@ -15,4 +15,4 @@ venv.bak/
 .DS_Store
 .vscode/
 models/saved/*.pkl
-*.pyc" > .gitignore
+*.pyc
