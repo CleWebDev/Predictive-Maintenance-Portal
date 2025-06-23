@@ -5,13 +5,13 @@ Risk assessment logic for maintenance predictions
 
 class RiskCalculator:
     def __init__(self):
-        # Risk thresholds in days
+        # More dramatic risk thresholds for better differentiation
         self.risk_thresholds = {
-            'critical': 15,  # < 15 days
-            'high': 30,      # 15-30 days
-            'medium': 60,    # 30-60 days
-            'low': 90        # 60-90 days
-            # > 90 days = very low risk
+            'critical': 10,   # < 10 days - immediate action
+            'high': 25,       # 10-25 days - urgent
+            'medium': 45,     # 25-45 days - soon
+            'low': 70         # 45-70 days - monitor
+            # > 70 days = very low risk
         }
         
         self.risk_colors = {

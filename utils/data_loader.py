@@ -7,7 +7,7 @@ import pandas as pd
 import numpy as np
 
 class DataLoader:
-    def __init__(self, csv_path):
+    def __init__(self, csv_path='data/realistic_maintenance_data.csv'):
         self.csv_path = csv_path
         self.df = None
         self.unique_values = {}

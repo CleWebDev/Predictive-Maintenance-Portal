@@ -24,6 +24,71 @@ class MaintenancePredictor:
         self.feature_names = []
         self.is_trained_flag = False
         
+    def _engineer_features(self, df):
+        """Create more sophisticated features that better reflect real-world relationships"""
+        df = df.copy()
+        
+        # Vibration risk score (exponential relationship)
+        df['vibration_risk'] = df['vibration_level_mm_s'] ** 2.5
+        
+        # Temperature stress factor (higher temperatures accelerate wear exponentially)
+        df['temp_stress'] = np.where(df['temperature_F'] > 80, 
+                                   (df['temperature_F'] - 60) ** 2 / 100,
+                                   1.0)
+        
+        # Pressure strain (extreme pressures are much worse)
+        df['pressure_strain'] = np.where(df['pressure_PSI'] > 120,
+                                       (df['pressure_PSI'] - 80) ** 1.8 / 50,
+                                       np.where(df['pressure_PSI'] < 70,
+                                              (80 - df['pressure_PSI']) ** 1.5 / 30,
+                                              1.0))
+        
+        # Load fatigue (high load factors cause exponential wear)
+        df['load_fatigue'] = df['load_factor'] ** 3
+        
+        # Combined stress index (multiplicative effects)
+        df['combined_stress'] = (df['vibration_risk'] * df['temp_stress'] * 
+                                df['pressure_strain'] * (1 + df['load_fatigue']))
+        
+        # Operating severity (some modes are much worse)
+        mode_severity = {
+            'Idle': 0.3,
+            'Standby': 0.5, 
+            'Production': 1.0,
+            'Overload': 3.5  # Overload is dramatically worse
+        }
+        df['operating_severity'] = df['operating_mode'].map(mode_severity).fillna(1.0)
+        
+        # Environment impact
+        env_impact = {
+            'Indoor': 0.7,
+            'Outdoor': 1.2,
+            'Humid': 1.8,
+            'Dusty': 2.5  # Dusty environments are much worse
+        }
+        df['env_impact'] = df['environment'].map(env_impact).fillna(1.0)
+        
+        # Machine-specific vulnerability
+        machine_vulnerability = {
+            'Pump': 1.0,
+            'Motor': 0.8,
+            'Compressor': 1.4,
+            'Lathe': 1.1,
+            'Conveyor': 0.9,
+            'CNC Mill': 1.3
+        }
+        df['machine_vulnerability'] = df['machine_type'].map(machine_vulnerability).fillna(1.0)
+        
+        # Maintenance interval pressure (longer intervals = higher risk)
+        df['maintenance_pressure'] = (df['maintenance_interval'] / 90) ** 1.5
+        
+        # Final degradation rate (this drives the prediction)
+        df['degradation_rate'] = (df['combined_stress'] * df['operating_severity'] * 
+                                 df['env_impact'] * df['machine_vulnerability'] * 
+                                 df['maintenance_pressure'])
+        
+        return df
+        
     def _encode_categorical_features(self, df, fit_encoders=False):
         """Encode categorical features"""
         categorical_cols = ['machine_type', 'operating_mode', 'environment']
@@ -48,23 +113,35 @@ class MaintenancePredictor:
         return df
     
     def train(self, X, y):
-        """Train the prediction model"""
+        """Train the prediction model with enhanced feature engineering"""
         try:
             # Make a copy to avoid modifying original data
-            X_encoded = X.copy()
+            X_enhanced = X.copy()
+            
+            # Add sophisticated feature engineering
+            X_enhanced = self._engineer_features(X_enhanced)
             
             # Encode categorical features
-            X_encoded = self._encode_categorical_features(X_encoded, fit_encoders=True)
+            X_enhanced = self._encode_categorical_features(X_enhanced, fit_encoders=True)
             
             # Store feature names
-            self.feature_names = X_encoded.columns.tolist()
+            self.feature_names = X_enhanced.columns.tolist()
             
             # Split data for validation
             X_train, X_test, y_train, y_test = train_test_split(
-                X_encoded, y, test_size=0.2, random_state=42
+                X_enhanced, y, test_size=0.2, random_state=42
             )
             
-            # Train model
+            # Train model with more sophisticated parameters
+            self.model = RandomForestRegressor(
+                n_estimators=200,  # More trees
+                random_state=42,
+                max_depth=15,      # Deeper trees
+                min_samples_split=3,
+                min_samples_leaf=2,
+                max_features='sqrt'
+            )
+            
             self.model.fit(X_train, y_train)
             
             # Validate model
@@ -72,7 +149,7 @@ class MaintenancePredictor:
             mae = mean_absolute_error(y_test, y_pred)
             r2 = r2_score(y_test, y_pred)
             
-            print(f"Model validation - MAE: {mae:.2f} days, R²: {r2:.3f}")
+            print(f"Enhanced model validation - MAE: {mae:.2f} days, R²: {r2:.3f}")
             
             self.is_trained_flag = True
             
@@ -84,13 +161,16 @@ class MaintenancePredictor:
             raise
     
     def predict(self, input_data):
-        """Make prediction for single input"""
+        """Make prediction for single input with realistic business logic"""
         if not self.is_trained_flag:
             raise ValueError("Model not trained yet")
         
         try:
             # Convert to DataFrame
             df = pd.DataFrame([input_data])
+            
+            # Apply feature engineering
+            df = self._engineer_features(df)
             
             # Encode categorical features
             df = self._encode_categorical_features(df, fit_encoders=False)
@@ -101,13 +181,24 @@ class MaintenancePredictor:
             # Make prediction
             raw_prediction = self.model.predict(df)[0]
             
-            # BUSINESS LOGIC FIXES:
-            # 1. Cap prediction at 90% of maintenance interval
+            # REALISTIC BUSINESS LOGIC:
             maintenance_interval = input_data['maintenance_interval']
-            max_allowed_days = maintenance_interval * 0.9
             
-            # 2. Ensure prediction is reasonable (between 1 and max_allowed_days)
-            prediction = max(1, min(max_allowed_days, raw_prediction))
+            # Get the degradation rate for more intelligent capping
+            degradation_rate = df['degradation_rate'].iloc[0]
+            
+            # Dynamic capping based on conditions
+            if degradation_rate > 10:  # Extreme conditions
+                max_allowed_days = maintenance_interval * 0.3  # Emergency maintenance
+            elif degradation_rate > 5:  # High stress
+                max_allowed_days = maintenance_interval * 0.5  # Urgent maintenance  
+            elif degradation_rate > 2:  # Moderate stress
+                max_allowed_days = maintenance_interval * 0.7  # Early maintenance
+            else:  # Good conditions
+                max_allowed_days = maintenance_interval * 0.95  # Normal schedule
+            
+            # Ensure prediction is reasonable (between 5 and max_allowed_days)
+            prediction = max(5, min(max_allowed_days, raw_prediction))
             
             return prediction
             
@@ -128,42 +219,84 @@ class MaintenancePredictor:
         return dict(sorted(importance_dict.items(), key=lambda x: x[1], reverse=True))
     
     def explain_prediction(self, input_data, feature_importance):
-        """Generate explanation for prediction"""
+        """Generate detailed, realistic explanations for prediction"""
         explanations = []
         
-        # High impact factors
-        top_features = list(feature_importance.keys())[:3]
+        # Calculate key metrics for explanation
+        vibration = input_data['vibration_level_mm_s']
+        temperature = input_data['temperature_F']
+        pressure = input_data['pressure_PSI']
+        load_factor = input_data['load_factor']
+        operating_mode = input_data['operating_mode']
+        environment = input_data['environment']
         
-        for feature in top_features:
-            if feature in input_data:
-                value = input_data[feature]
-                impact = feature_importance[feature]
-                
-                if feature == 'vibration_level_mm_s':
-                    if value > 2.5:
-                        explanations.append(f"High vibration level ({value:.1f} mm/s) increases failure risk")
-                    elif value < 1.0:
-                        explanations.append(f"Low vibration level ({value:.1f} mm/s) indicates good condition")
-                
-                elif feature == 'temperature_F':
-                    if value > 85:
-                        explanations.append(f"High temperature ({value:.1f}°F) accelerates wear")
-                    elif value < 60:
-                        explanations.append(f"Optimal temperature ({value:.1f}°F) extends equipment life")
-                
-                elif feature == 'load_factor':
-                    if value > 0.8:
-                        explanations.append(f"High load factor ({value:.1f}) increases stress on components")
-                    elif value < 0.3:
-                        explanations.append(f"Low load factor ({value:.1f}) reduces equipment stress")
-                
-                elif feature == 'maintenance_interval':
-                    if value > 150:
-                        explanations.append(f"Long maintenance interval ({value} days) may increase failure risk")
-                    elif value < 60:
-                        explanations.append(f"Frequent maintenance ({value} days) helps prevent failures")
+        # Vibration analysis
+        if vibration > 3.0:
+            explanations.append(f"CRITICAL: Excessive vibration ({vibration:.1f} mm/s) indicates severe mechanical issues - immediate inspection required")
+        elif vibration > 2.5:
+            explanations.append(f"HIGH CONCERN: Elevated vibration ({vibration:.1f} mm/s) suggests bearing wear or misalignment")
+        elif vibration > 2.0:
+            explanations.append(f"MODERATE: Above-normal vibration ({vibration:.1f} mm/s) warrants monitoring")
+        elif vibration < 1.0:
+            explanations.append(f"EXCELLENT: Low vibration ({vibration:.1f} mm/s) indicates good mechanical condition")
         
-        return explanations if explanations else ["Prediction based on overall equipment condition"]
+        # Temperature analysis
+        if temperature > 90:
+            explanations.append(f"DANGER: High temperature ({temperature:.1f}°F) accelerates wear exponentially - cooling system check needed")
+        elif temperature > 80:
+            explanations.append(f"WARNING: Elevated temperature ({temperature:.1f}°F) reduces component lifespan significantly")
+        elif temperature < 65:
+            explanations.append(f"OPTIMAL: Good operating temperature ({temperature:.1f}°F) extends equipment life")
+        
+        # Pressure analysis
+        if pressure > 140:
+            explanations.append(f"EXTREME: Dangerously high pressure ({pressure} PSI) risks catastrophic failure")
+        elif pressure > 120:
+            explanations.append(f"HIGH STRESS: Excessive pressure ({pressure} PSI) accelerates seal and gasket wear")
+        elif pressure < 70:
+            explanations.append(f"LOW EFFICIENCY: Insufficient pressure ({pressure} PSI) may indicate system leaks")
+        
+        # Load factor analysis
+        if load_factor > 0.85:
+            explanations.append(f"OVERLOADED: Extreme load ({load_factor*100:.0f}%) causes rapid fatigue - reduce load immediately")
+        elif load_factor > 0.7:
+            explanations.append(f"HEAVY DUTY: High load factor ({load_factor*100:.0f}%) increases maintenance frequency needs")
+        elif load_factor < 0.3:
+            explanations.append(f"LIGHT DUTY: Low load factor ({load_factor*100:.0f}%) allows extended maintenance intervals")
+        
+        # Operating mode impact
+        if operating_mode == 'Overload':
+            explanations.append("CRITICAL FACTOR: Overload operation dramatically shortens equipment lifespan")
+        elif operating_mode == 'Production':
+            explanations.append("STANDARD: Production mode requires regular maintenance schedule")
+        elif operating_mode == 'Idle':
+            explanations.append("FAVORABLE: Idle operation reduces wear and extends service intervals")
+        
+        # Environmental impact
+        if environment == 'Dusty':
+            explanations.append("HARSH CONDITIONS: Dusty environment clogs filters and accelerates abrasive wear")
+        elif environment == 'Humid':
+            explanations.append("CORROSIVE: High humidity promotes rust and electrical component degradation")
+        elif environment == 'Outdoor':
+            explanations.append("VARIABLE: Outdoor conditions expose equipment to temperature cycling and contamination")
+        elif environment == 'Indoor':
+            explanations.append("PROTECTED: Indoor environment provides stable operating conditions")
+        
+        # Combined effect
+        risk_factors = []
+        if vibration > 2.5: risk_factors.append("high vibration")
+        if temperature > 85: risk_factors.append("excessive heat")
+        if pressure > 130: risk_factors.append("high pressure")
+        if load_factor > 0.8: risk_factors.append("overloading")
+        if operating_mode == 'Overload': risk_factors.append("overload mode")
+        if environment in ['Dusty', 'Humid']: risk_factors.append("harsh environment")
+        
+        if len(risk_factors) >= 3:
+            explanations.append(f"MULTIPLE STRESSORS: Combination of {', '.join(risk_factors)} creates compound failure risk")
+        elif len(risk_factors) == 0:
+            explanations.append("EXCELLENT CONDITIONS: All parameters within optimal ranges for extended operation")
+        
+        return explanations if explanations else ["Equipment condition assessment based on current sensor readings"]
     
     def _save_model(self):
         """Save trained model"""
