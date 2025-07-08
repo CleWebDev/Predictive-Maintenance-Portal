@@ -15,11 +15,11 @@ class RiskCalculator:
         }
         
         self.risk_colors = {
-            'critical': '#dc3545',  # Red
-            'high': '#fd7e14',      # Orange
-            'medium': '#ffc107',    # Yellow
-            'low': '#28a745',       # Green
-            'very_low': '#17a2b8'   # Blue
+            'critical': 'rgba(255, 59, 48, 0.9)',   # Apple Red
+            'high': 'rgba(255, 149, 0, 0.9)',       # Apple Orange
+            'medium': 'rgba(255, 204, 0, 0.9)',     # Apple Yellow
+            'low': 'rgba(52, 199, 89, 0.9)',        # Apple Green
+            'very_low': 'rgba(0, 122, 255, 0.9)'    # Apple Blue
         }
     
     def calculate_risk(self, days_until_maintenance_needed):

@@ -9,18 +9,40 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>Predictive Maintenance Portal</h1>
-            <p>Enter equipment parameters to predict failure timeline and assess maintenance needs</p>
+            <div class="company-branding">
+                <div class="logo-container">
+                    <div class="logo-icon">
+                        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" style="stop-color:rgba(255,255,255,0.95);stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:rgba(127,189,255,0.875);stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="url(#logoGradient)" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 17L12 22L22 17" stroke="url(#logoGradient)" stroke-width="2" stroke-linejoin="round"/>
+                            <path d="M2 12L12 17L22 12" stroke="url(#logoGradient)" stroke-width="2" stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+                    <div class="company-info">
+                        <h1 class="company-name">Precision Dynamics</h1>
+                        <div class="company-tagline">Advanced Manufacturing Solutions</div>
+                    </div>
+                </div>
+                <div class="tool-title">
+                    <h2>Predictive Maintenance Portal</h2>
+                    <p>AI-powered predictive maintenance for industrial equipment optimization</p>
+                </div>
+            </div>
         </div>
 
         <div class="main-content">
-            <div class="input-panel">
-                <div class="input-panel-inner">
+            <div class="glass-panel input-panel">
                 <h3>Equipment Parameters</h3>
                 <form id="predictionForm">
                     <div class="form-group">
                         <label for="machine_type">Machine Type:</label>
-                        <select id="machine_type" name="machine_type" required>
+                        <select id="machine_type" name="machine_type" class="glass-input" required>
                             <option value="">Select machine type...</option>
                             {% for machine in unique_values.machine_type %}
                             <option value="{{ machine }}">{{ machine }}</option>
@@ -30,7 +52,7 @@
 
                     <div class="form-group">
                         <label for="operating_mode">Operating Mode:</label>
-                        <select id="operating_mode" name="operating_mode" required>
+                        <select id="operating_mode" name="operating_mode" class="glass-input" required>
                             <option value="">Select operating mode...</option>
                             {% for mode in unique_values.operating_mode %}
                             <option value="{{ mode }}">{{ mode }}</option>
@@ -40,7 +62,7 @@
 
                     <div class="form-group">
                         <label for="environment">Environment:</label>
-                        <select id="environment" name="environment" required>
+                        <select id="environment" name="environment" class="glass-input" required>
                             <option value="">Select environment...</option>
                             {% for env in unique_values.environment %}
                             <option value="{{ env }}">{{ env }}</option>
@@ -51,6 +73,7 @@
                     <div class="form-group">
                         <label for="maintenance_interval">Maintenance Interval (days):</label>
                         <input type="number" id="maintenance_interval" name="maintenance_interval" 
+                               class="glass-input"
                                min="{{ unique_values.maintenance_interval_range.min }}" 
                                max="{{ unique_values.maintenance_interval_range.max }}" required>
                         <div class="input-hint">Range: {{ unique_values.maintenance_interval_range.min }} - {{ unique_values.maintenance_interval_range.max }} days</div>
@@ -58,7 +81,7 @@
 
                     <div class="form-group">
                         <label for="vibration_level">Vibration Level (mm/s):</label>
-                        <select id="vibration_level" name="vibration_level" required>
+                        <select id="vibration_level" name="vibration_level" class="glass-input" required>
                             <option value="">Select vibration level...</option>
                             {% for level in unique_values.vibration_level_options %}
                             <option value="{{ level }}">{{ level }} mm/s</option>
@@ -70,6 +93,7 @@
                     <div class="form-group">
                         <label for="temperature">Temperature (°F):</label>
                         <input type="number" id="temperature" name="temperature" 
+                               class="glass-input"
                                min="{{ unique_values.temperature_F_range.min }}" 
                                max="{{ unique_values.temperature_F_range.max }}" 
                                step="0.1" required>
@@ -78,7 +102,7 @@
 
                     <div class="form-group">
                         <label for="pressure">Pressure (PSI):</label>
-                        <select id="pressure" name="pressure" required>
+                        <select id="pressure" name="pressure" class="glass-input" required>
                             <option value="">Select pressure level...</option>
                             {% for psi in unique_values.pressure_options %}
                             <option value="{{ psi }}">{{ psi }} PSI</option>
@@ -90,6 +114,7 @@
                     <div class="form-group">
                         <label for="load_factor">Load Factor (0-1):</label>
                         <input type="number" id="load_factor" name="load_factor" 
+                               class="glass-input"
                                min="0" max="1" step="0.01" required>
                         <div class="input-hint">0 = No load, 1 = Maximum load</div>
                     </div>
@@ -97,12 +122,10 @@
                     <button type="submit" class="predict-btn" id="predictBtn">
                         Analyze Equipment Condition
                     </button>
-                    </form>
-                </div>
+                </form>
             </div>
 
-            <div class="results-panel">
-                <div class="results-panel-inner">
+            <div class="glass-panel results-panel">
                 <h3>Analysis Results</h3>
                 
                 <div id="loading" class="loading">
@@ -132,8 +155,21 @@
                     </div>
                 </div>
             </div>
-            </div>
         </div>
+        
+        <footer class="footer">
+            <div class="footer-content">
+                <div class="footer-branding">
+                    <img src="https://www.theprovatogroup.com/wp-content/themes/provato/images/logo.png" alt="The Provato Group" class="footer-logo">
+                    <div class="footer-text">
+                        <span class="powered-by">Powered by</span>
+                        <!--<span class="brand-name">Provato AI</span>
+                        <span class="service-text">as a service of</span>-->
+                        <a href="https://www.theprovatogroup.com" target="_blank" class="company-link">The Provato Group</a>
+                    </div>
+                </div>
+            </div>
+        </footer>
     </div>
 
     <script>
@@ -203,15 +239,27 @@
                 const predictionValue = document.getElementById('predictionValue');
                 const riskMessage = document.getElementById('riskMessage');
                 
-                riskIndicator.style.backgroundColor = result.risk_color + '20';
-                riskIndicator.style.borderLeft = `4px solid ${result.risk_color}`;
+                // Remove existing risk classes
+                riskIndicator.className = 'risk-indicator';
+                
+                // Add appropriate risk class
+                if (result.risk_level === 'very_low') {
+                    riskIndicator.classList.add('risk-very-low');
+                } else if (result.risk_level === 'low') {
+                    riskIndicator.classList.add('risk-low');
+                } else if (result.risk_level === 'medium') {
+                    riskIndicator.classList.add('risk-medium');
+                } else if (result.risk_level === 'high') {
+                    riskIndicator.classList.add('risk-high');
+                } else if (result.risk_level === 'critical') {
+                    riskIndicator.classList.add('risk-critical');
+                }
                 
                 // Show maintenance timing vs interval
                 const maintenanceText = `Maintenance recommended in <br>${result.days_until_maintenance} days`;
                 const intervalText = `(Scheduled interval: ${result.maintenance_interval} days)`;
                 
                 predictionValue.innerHTML = `${maintenanceText}<br><small>${intervalText}</small>`;
-                predictionValue.style.color = result.risk_color;
                 riskMessage.textContent = result.risk_message;
 
                 // Update explanation
